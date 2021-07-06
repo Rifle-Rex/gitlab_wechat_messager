@@ -52,11 +52,10 @@ class Parser:
         return msg
 
     @classmethod
-    def _parasePush(cls, o):
+    def _parsePush(cls, o):
         msg = cls.getTemplate('text')
         msgDict = {
             "项目名": o['project']['name'],
-            '仓库': o['repository']['name'],
             'before_push' : o['before'],
             'after_push': o['after'],
             'user_name': o['user_name'],
@@ -93,9 +92,12 @@ class Parser:
             raise NameError("can't find a parse to handle event '%s'" % event_name)
 
 def sendMessage(url, msg):
-    response = requests.post(url, msg)
+    response = requests.post(url, json=msg)
     if response.status_code != 200:
         response.raise_for_status()
+    re_json = json.loads(response.text)
+    if re_json['errcode'] != 0:
+        raise RuntimeError(response.text)
 
 if __name__ == "__main__":
     input_str = stdin.read()
@@ -108,6 +110,7 @@ if __name__ == "__main__":
     if event_name not in trigger_event:
         sys.exit(0)
     msg = Parser.parseRequest(args['event_name'], args)
-    url = "https://qyapi.weixin.qq.com/cgi-bin/webhook/send?key=blablablablabla" # setup the wecom robot message api
+    # setup the wecom robot message api
+    url = "https://qyapi.weixin.qq.com/cgi-bin/webhook/send?key=blablablablabla" 
     sendMessage(url, msg)
     sys.exit(0)
